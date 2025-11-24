@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Жирный Федоряк</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+        
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #ffcccc, #ccffcc);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 10px;
+            overflow: hidden;
+        }
+        
+        h1 {
+            color: #ff6600;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            font-size: clamp(1.8rem, 6vw, 2.5rem);
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            height: 60vh;
+            min-height: 400px;
+            background-color: #a0d8ff;
+            border: 5px solid #ff9900;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            margin: 0 auto;
+        }
+        
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            background-color: #a0d8ff;
+        }
+        
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        button {
+            background-color: #ff9900;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        button:hover, button:active {
+            background-color: #ff6600;
+            transform: translateY(-3px);
+        }
+        
+        .score-container {
+            font-size: 1.5rem;
+            margin-top: 10px;
+            color: #ff3300;
+            font-weight: bold;
+        }
+        
+        .instructions {
+            margin-top: 15px;
+            text-align: center;
+            max-width: 500px;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            font-size: 0.9rem;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            text-align: center;
+            display: none;
+            z-index: 10;
+            padding: 20px;
+        }
+        
+        .game-over h2 {
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+        
+        .touch-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 15px;
+            pointer-events: none;
+            z-index: 5;
+        }
+        
+        .d-pad {
+            display: grid;
+            grid-template-areas: 
+                ". up ."
+                "left . right"
+                ". down .";
+            gap: 8px;
+            pointer-events: auto;
+        }
+        
+        .d-pad button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: rgba(255, 153, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            min-width: auto;
+        }
+        
+        .d-pad button:active {
+            background-color: rgba(255, 102, 0, 0.9);
+        }
+        
+        .up { grid-area: up; }
+        .down { grid-area: down; }
+        .left { grid-area: left; }
+        .right { grid-area: right; }
+        
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: auto;
+        }
+        
+        .action-buttons button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 0.8rem;
+            padding: 5px;
+            min-width: auto;
+        }
+        
+        @media (max-width: 400px) {
+            .game-container {
+                height: 50vh;
+                min-height: 350px;
+            }
+            
+            .d-pad button {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .action-buttons button {
+                width: 55px;
+                height: 55px;
+            }
+        }
+        
+        @media (max-height: 600px) {
+            .game-container {
+                height: 55vh;
+            }
+            
+            .instructions {
+                display: none;
+            }
+        }
+        
+        .orientation-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        @media (max-width: 768px) and (orientation: portrait) {
+            .orientation-warning {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Жирный Федоряк</h1>
+    
+    <div class="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div class="game-over" id="gameOver">
+            <h2>Игра окончена!</h2>
+            <p>Ваш счет: <span id="finalScore">0</span></p>
+            <button id="restartButton">Играть снова</button>
+        </div>
+        
+        <div class="touch-controls">
+            <div class="d-pad">
+                <button class="up" id="upButton">↑</button>
+                <button class="down" id="downButton">↓</button>
+                <button class="left" id="leftButton">←</button>
+                <button class="right" id="rightButton">→</button>
+            </div>
+            <div class="action-buttons">
+                <button id="pauseBtn">Пауза</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="score-container">
+        Счет: <span id="score">0</span>
+    </div>
+    
+    <div class="controls">
+        <button id="startButton">Начать игру</button>
+    </div>
+    
+    <div class="instructions">
+        <h3>Как играть:</h3>
+        <p>Управляйте Жирным Федоряком с помощью стрелок на экране. Собирайте еду (зеленые круги), чтобы увеличить счет и размер Федоряка.</p>
+        <p>Избегайте препятствий (красные квадраты) - столкновение с ними завершает игру!</p>
+    </div>
+    
+    <div class="orientation-warning" id="orientationWarning">
+        <h2>Пожалуйста, поверните устройство</h2>
+        <p>Для лучшего игрового опыта переверните телефон в альбомный режим</p>
+    </div>
+
+    <script>
+        // Получаем элементы DOM
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const finalScoreElement = document.getElementById('finalScore');
+        const startButton = document.getElementById('startButton');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const restartButton = document.getElementById('restartButton');
+        const gameOverScreen = document.getElementById('gameOver');
+        const orientationWarning = document.getElementById('orientationWarning');
+        
+        // Кнопки управления
+        const upButton = document.getElementById('upButton');
+        const downButton = document.getElementById('downButton');
+        const leftButton = document.getElementById('leftButton');
+        const rightButton = document.getElementById('rightButton');
+        
+        // Устанавливаем размеры canvas
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        
+        // Игровые переменные
+        let gameRunning = false;
+        let gamePaused = false;
+        let score = 0;
+        let animationId;
+        
+        // Объект игрока
+        const player = {
+            x: 0,
+            y: 0,
+            radius: 20,
+            speed: 5,
+            color: '#ff6600',
+            dx: 0,
+            dy: 0
+        };
+        
+        // Массивы для еды и препятствий
+        let food = [];
+        let obstacles = [];
+        
+        // Адаптация скорости и размеров под размер экрана
+        function getAdjustedValue(baseValue) {
+            const scale = Math.min(canvas.width / 500, canvas.height / 500);
+            return baseValue * scale;
+        }
+        
+        // Создание еды
+        function createFood() {
+            const radius = getAdjustedValue(10);
+            food.push({
+                x: Math.random() * (canvas.width - radius*2) + radius,
+                y: Math.random() * (canvas.height - radius*2) + radius,
+                radius: radius,
+                color: '#33cc33'
+            });
+        }
+        
+        // Создание препятствий
+        function createObstacle() {
+            const size = getAdjustedValue(30);
+            obstacles.push({
+                x: Math.random() * (canvas.width - size) + size/2,
+                y: Math.random() * (canvas.height - size) + size/2,
+                width: size,
+                height: size,
+                color: '#ff3333'
+            });
+        }
+        
+        // Отрисовка игрока
+        function drawPlayer() {
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fillStyle = player.color;
+            ctx.fill();
+            ctx.closePath();
+            
+            // Рисуем глаза
+            const eyeRadius = getAdjustedValue(5);
+            const eyeOffset = getAdjustedValue(8);
+            ctx.beginPath();
+            ctx.arc(player.x - eyeOffset, player.y - eyeOffset, eyeRadius, 0, Math.PI * 2);
+            ctx.arc(player.x + eyeOffset, player.y - eyeOffset, eyeRadius, 0, Math.PI * 2);
+            ctx.fillStyle = 'white';
+            ctx.fill();
+            ctx.closePath();
+            
+            // Рисуем зрачки
+            const pupilRadius = getAdjustedValue(2);
+            ctx.beginPath();
+            ctx.arc(player.x - eyeOffset, player.y - eyeOffset, pupilRadius, 0, Math.PI * 2);
+            ctx.arc(player.x + eyeOffset, player.y - eyeOffset, pupilRadius, 0, Math.PI * 2);
+            ctx.fillStyle = 'black';
+            ctx.fill();
+            ctx.closePath();
+            
+            // Рисуем улыбку
+            ctx.beginPath();
+            ctx.arc(player.x, player.y + getAdjustedValue(5), getAdjustedValue(10), 0, Math.PI, false);
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = getAdjustedValue(2);
+            ctx.stroke();
+            ctx.closePath();
+        }
+        
+        // Отрисовка еды
+        function drawFood() {
+            food.forEach(item => {
+                ctx.beginPath();
+                ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
+                ctx.fillStyle = item.color;
+                ctx.fill();
+                ctx.closePath();
+            });
+        }
+        
+        // Отрисовка препятствий
+        function drawObstacles() {
+            obstacles.forEach(obstacle => {
+                ctx.fillStyle = obstacle.color;
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
+        }
+        
+        // Обновление позиции игрока
+        function updatePlayer() {
+            player.x += player.dx;
+            player.y += player.dy;
+            
+            // Проверка границ
+            if (player.x - player.radius < 0) {
+                player.x = player.radius;
+            }
+            if (player.x + player.radius > canvas.width) {
+                player.x = canvas.width - player.radius;
+            }
+            if (player.y - player.radius < 0) {
+                player.y = player.radius;
+            }
+            if (player.y + player.radius > canvas.height) {
+                player.y = canvas.height - player.radius;
+            }
+        }
+        
+        // Проверка столкновений с едой
+        function checkFoodCollision() {
+            for (let i = 0; i < food.length; i++) {
+                const dx = player.x - food[i].x;
+                const dy = player.y - food[i].y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < player.radius + food[i].radius) {
+                    // Увеличиваем счет и размер игрока
+                    score += 10;
+                    player.radius += getAdjustedValue(1.5);
+                    
+                    // Удаляем съеденную еду
+                    food.splice(i, 1);
+                    
+                    // Создаем новую еду
+                    createFood();
+                    
+                    // Обновляем счет на экране
+                    scoreElement.textContent = score;
+                    
+                    // Каждые 50 очков добавляем препятствие
+                    if (score % 50 === 0) {
+                        createObstacle();
+                    }
+                    
+                    break;
+                }
+            }
+        }
+        
+        // Проверка столкновений с препятствиями
+        function checkObstacleCollision() {
+            for (let i = 0; i < obstacles.length; i++) {
+                const obstacle = obstacles[i];
+                
+                // Проверяем столкновение круга с прямоугольником
+                const closestX = Math.max(obstacle.x, Math.min(player.x, obstacle.x + obstacle.width));
+                const closestY = Math.max(obstacle.y, Math.min(player.y, obstacle.y + obstacle.height));
+                
+                const distanceX = player.x - closestX;
+                const distanceY = player.y - closestY;
+                const distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+                
+                if (distance < player.radius) {
+                    gameOver();
+                    break;
+                }
+            }
+        }
+        
+        // Игровой цикл
+        function gameLoop() {
+            if (!gameRunning || gamePaused) return;
+            
+            // Очистка холста
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Обновление и отрисовка
+            updatePlayer();
+            drawPlayer();
+            drawFood();
+            drawObstacles();
+            
+            // Проверка столкновений
+            checkFoodCollision();
+            checkObstacleCollision();
+            
+            // Продолжаем игровой цикл
+            animationId = requestAnimationFrame(gameLoop);
+        }
+        
+        // Начало игры
+        function startGame() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+            
+            gameRunning = true;
+            gamePaused = false;
+            score = 0;
+            player.radius = getAdjustedValue(20);
+            player.x = canvas.width / 2;
+            player.y = canvas.height / 2;
+            player.dx = 0;
+            player.dy = 0;
+            
+            // Очищаем массивы
+            food = [];
+            obstacles = [];
+            
+            // Создаем начальную еду
+            for (let i = 0; i < 5; i++) {
+                createFood();
+            }
+            
+            // Создаем начальные препятствия
+            for (let i = 0; i < 3; i++) {
+                createObstacle();
+            }
+            
+            // Обновляем счет
+            scoreElement.textContent = score;
+            
+            // Скрываем экран окончания игры
+            gameOverScreen.style.display = 'none';
+            
+            // Обновляем текст кнопки паузы
+            pauseBtn.textContent = 'Пауза';
+            
+            // Запускаем игровой цикл
+            gameLoop();
+        }
+        
+        // Конец игры
+        function gameOver() {
+            gameRunning = false;
+            finalScoreElement.textContent = score;
+            gameOverScreen.style.display = 'flex';
+        }
+        
+        // Обработчики событий для кнопок
+        startButton.addEventListener('click', startGame);
+        
+        pauseBtn.addEventListener('click', function() {
+            if (gameRunning) {
+                gamePaused = !gamePaused;
+                pauseBtn.textContent = gamePaused ? 'Продолжить' : 'Пауза';
+                if (!gamePaused) {
+                    gameLoop();
+                }
+            }
+        });
+        
+        restartButton.addEventListener('click', startGame);
+        
+        // Обработчики событий для сенсорного управления
+        function setupButton(button, direction) {
+            const setDirection = () => {
+                if (!gameRunning || gamePaused) return;
+                
+                switch(direction) {
+                    case 'up':
+                        player.dy = -player.speed;
+                        break;
+                    case 'down':
+                        player.dy = player.speed;
+                        break;
+                    case 'left':
+                        player.dx = -player.speed;
+                        break;
+                    case 'right':
+                        player.dx = player.speed;
+                        break;
+                }
+            };
+            
+            const clearDirection = () => {
+                if (!gameRunning || gamePaused) return;
+                
+                switch(direction) {
+                    case 'up':
+                    case 'down':
+                        player.dy = 0;
+                        break;
+                    case 'left':
+                    case 'right':
+                        player.dx = 0;
+                        break;
+                }
+            };
+            
+            button.addEventListener('touchstart', setDirection);
+            button.addEventListener('touchend', clearDirection);
+            button.addEventListener('touchcancel', clearDirection);
+            
+            // Для совместимости с десктопом
+            button.addEventListener('mousedown', setDirection);
+            button.addEventListener('mouseup', clearDirection);
+            button.addEventListener('mouseleave', clearDirection);
+        }
+        
+        // Настройка кнопок управления
+        setupButton(upButton, 'up');
+        setupButton(downButton, 'down');
+        setupButton(leftButton, 'left');
+        setupButton(rightButton, 'right');
+        
+        // Обработчики событий клавиатуры (для десктопов)
+        document.addEventListener('keydown', function(e) {
+            if (!gameRunning || gamePaused) return;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    player.dy = -player.speed;
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    player.dy = player.speed;
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    player.dx = -player.speed;
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    player.dx = player.speed;
+                    break;
+            }
+        });
+        
+        document.addEventListener('keyup', function(e) {
+            if (!gameRunning || gamePaused) return;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    player.dy = 0;
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    player.dx = 0;
+                    break;
+            }
+        });
+        
+        // Обработчик изменения ориентации
+        window.addEventListener('orientationchange', function() {
+            setTimeout(resizeCanvas, 100);
+            if (gameRunning) {
+                startGame(); // Перезапускаем игру при смене ориентации
+            }
+        });
+        
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Инициализация игры
+        resizeCanvas();
+        startGame();
+    </script>
+</body>
+</html>
